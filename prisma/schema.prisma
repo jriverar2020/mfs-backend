@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Customer {
+  id Int @id @default(autoincrement())
+  fullName String
+  email String @unique
+  phone String?
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Student {
+ id Int @id @default(autoincrement())
+ fullName String
+ email String @unique
+ createdAt DateTime @default(now())
+ // 1:1
+ Profile StudentProfile?
+ // N:M explícita con campos extra
+ enrollments Enrollment[]
+}
+
+model StudentProfile {
+ id Int @id @default(autoincrement())
+ studentId Int @unique
+ phone String?
+ Address String?
+ // 1:1: FK vive aquí
+ Student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model Department {
+ id Int @id @default(autoincrement())
+ name String @unique
+ // 1:N
+ courses Course[]
+}
+model Course {
+ id Int @id @default(autoincrement())
+ code String @unique
+ title String
+ departmentId Int
+ // 1:N: FK vive aquí
+ department Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+ // N:M implícita
+ tags Tag[]
+ // N:M explícita
+ enrollments Enrollment[]
+}
+model Tag {
+ id Int @id @default(autoincrement())
+ name String @unique
+ // N:M implícita con Course
+ courses Course[]
+}
+
+enum EnrollmentStatus {
+ ACTIVE
+ DROPPED
+ COMPLETED
+}
+model Enrollment {
+ // N:M explícita: tabla puente con campos extra
+ id Int @id @default(autoincrement())
+ studentId Int
+ courseId Int
+ status EnrollmentStatus @default(ACTIVE)
+ enrolledAt DateTime @default(now())
+ student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+ course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+ // evita duplicados (un estudiante no se matricula 2 veces al mismo curso)
+ @@unique([studentId, courseId])
+ @@index([courseId])
+}
+
+model User {
+ id Int @id @default(autoincrement())
+ email String @unique
+ password String
+ fullName String
+ createdAt DateTime @default(now())
+}
